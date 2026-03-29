@@ -69,6 +69,11 @@ def fetch_candles(session, symbol_token, exchange, interval, start_dt, end_dt):
         resp = session.getCandleData(params)
         if resp.get("status") and resp.get("data"):
             all_candles.extend(resp["data"])
+        elif isinstance(resp, dict) and not resp.get("status", True):
+            # API responded with an error (e.g., AB1034 Invalid API Key)
+            err_msg = resp.get("message", "Historical API Error")
+            raise ValueError(f"AngelOne API Error: {err_msg} (Code: {resp.get('errorCode', '')})")
+            
         chunk_start = chunk_end + timedelta(minutes=1)
 
     return all_candles
