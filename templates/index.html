@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AngelOne Candle Fetcher</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --red:     #C0392B;
+    --red-dim: #922B21;
+    --red-bg:  #FDEDEC;
+    --ink:     #1a1a1a;
+    --muted:   #6b6b6b;
+    --border:  #e3e3e3;
+    --surface: #ffffff;
+    --bg:      #F7F4F1;
+    --green:   #1e8449;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--ink);
+    padding: 18px 40px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .logo-mark {
+    width: 36px; height: 36px;
+    background: var(--red);
+    border-radius: 8px;
+    display: grid; place-items: center;
+    font-size: 18px; font-weight: 800; color: #fff;
+  }
+  header h1 { font-size: 1.15rem; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+  header span { font-size: 0.78rem; color: #999; font-family: 'DM Mono', monospace; margin-left: auto; }
+
+  /* ── Main layout ── */
+  main {
+    flex: 1;
+    max-width: 860px;
+    width: 100%;
+    margin: 40px auto;
+    padding: 0 24px;
+  }
+
+  .page-title {
+    font-size: 2rem; font-weight: 800;
+    letter-spacing: -1px; line-height: 1.1;
+    margin-bottom: 6px;
+  }
+  .page-title span { color: var(--red); }
+  .page-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 32px; }
+
+  /* ── Card ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-size: 0.72rem;
+    font-family: 'DM Mono', monospace;
+    font-weight: 500;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--red);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── Form grid ── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+  .col-span-2 { grid-column: span 2; }
+
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+  }
+  input, select {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.85rem;
+    padding: 10px 14px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--ink);
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input:focus, select:focus {
+    border-color: var(--red);
+    box-shadow: 0 0 0 3px rgba(192,57,43,0.1);
+    background: #fff;
+  }
+  input[type="password"] { letter-spacing: 2px; }
+
+  .hint {
+    font-size: 0.72rem;
+    color: #aaa;
+    font-family: 'DM Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* ── Date/time row ── */
+  .datetime-group { display: grid; grid-template-columns: 1fr 120px; gap: 10px; }
+
+  /* ── Submit ── */
+  .btn-wrap { margin-top: 8px; }
+  button[type="submit"] {
+    width: 100%;
+    padding: 14px;
+    background: var(--red);
+    color: #fff;
+    font-family: 'Syne', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    letter-spacing: 0.3px;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  button[type="submit"]:hover  { background: var(--red-dim); }
+  button[type="submit"]:active { transform: scale(0.99); }
+  button[type="submit"]:disabled {
+    background: #ccc; cursor: not-allowed; transform: none;
+  }
+
+  /* ── Status banner ── */
+  #status {
+    display: none;
+    padding: 14px 20px;
+    border-radius: 10px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    margin-top: 16px;
+    align-items: center;
+    gap: 10px;
+  }
+  #status.error   { display: flex; background: var(--red-bg); color: var(--red); border: 1px solid #f5c6c2; }
+  #status.success { display: flex; background: #eafaf1; color: var(--green); border: 1px solid #a9dfbf; }
+  #status.loading { display: flex; background: #fef9e7; color: #9a7d0a; border: 1px solid #f9e79f; }
+
+  /* Spinner */
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2.5px solid rgba(154,125,10,0.3);
+    border-top-color: #9a7d0a;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Info box ── */
+  .info-box {
+    background: #fafafa;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--red);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-size: 0.82rem;
+    color: var(--muted);
+    line-height: 1.6;
+  }
+  .info-box strong { color: var(--ink); }
+  .info-box a { color: var(--red); text-decoration: none; }
+  .info-box a:hover { text-decoration: underline; }
+  .info-box code {
+    font-family: 'DM Mono', monospace;
+    background: #eee;
+    padding: 1px 5px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  /* ── Footer ── */
+  footer {
+    text-align: center;
+    padding: 20px;
+    font-size: 0.75rem;
+    color: #bbb;
+    font-family: 'DM Mono', monospace;
+  }
+
+  @media (max-width: 600px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+    .datetime-group { grid-template-columns: 1fr; }
+    main { margin: 20px auto; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">A</div>
+  <h1>AngelOne Candle Fetcher</h1>
+  <span>SmartAPI v2</span>
+</header>
+
+<main>
+  <p class="page-title">Fetch <span>Candle Data</span><br>Export to Excel</p>
+  <p class="page-sub">Login with your AngelOne SmartAPI credentials and download OHLCV data as a formatted .xlsx file.</p>
+
+  <form id="fetchForm">
+
+    <!-- Credentials -->
+    <div class="card">
+      <div class="card-title">API Credentials</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>API Key</label>
+          <input type="text" name="api_key" placeholder="Your SmartAPI key" required/>
+        </div>
+        <div class="field">
+          <label>Client ID</label>
+          <input type="text" name="client_id" placeholder="e.g. A12345" required/>
+        </div>
+        <div class="field">
+          <label>MPIN / Password</label>
+          <input type="password" name="password" placeholder="4-digit MPIN" required/>
+        </div>
+        <div class="field">
+          <label>TOTP Secret (Base32)</label>
+          <input type="text" name="totp_secret" placeholder="Base32 key from AngelOne app" required/>
+          <span class="hint">Found in AngelOne app → Profile → Enable TOTP</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Instrument -->
+    <div class="card">
+      <div class="card-title">Instrument</div>
+      <div class="grid-3">
+        <div class="field col-span-2">
+          <label>Symbol Name</label>
+          <input type="text" name="symbol" placeholder="e.g. RELIANCE, NIFTY, BANKNIFTY" required/>
+        </div>
+        <div class="field">
+          <label>Exchange</label>
+          <select name="exchange">
+            <option value="NSE">NSE</option>
+            <option value="BSE">BSE</option>
+            <option value="NFO">NFO (F&O)</option>
+            <option value="MCX">MCX</option>
+            <option value="CDS">CDS</option>
+          </select>
+        </div>
+        <div class="field col-span-2">
+          <label>Symbol Token</label>
+          <input type="text" name="symbol_token" placeholder="e.g. 2885 for RELIANCE" required/>
+          <span class="hint">
+            Get token from
+            <a href="https://margincalculator.angelbroking.com/OpenAPI_File/files/OpenAPIScripMaster.json" target="_blank">
+              AngelOne ScripMaster JSON
+            </a>
+          </span>
+        </div>
+        <div class="field">
+          <label>Interval</label>
+          <select name="interval">
+            <option value="ONE_MINUTE">1 Minute</option>
+            <option value="THREE_MINUTE">3 Minutes</option>
+            <option value="FIVE_MINUTE" selected>5 Minutes</option>
+            <option value="TEN_MINUTE">10 Minutes</option>
+            <option value="FIFTEEN_MINUTE">15 Minutes</option>
+            <option value="THIRTY_MINUTE">30 Minutes</option>
+            <option value="ONE_HOUR">1 Hour</option>
+            <option value="ONE_DAY">1 Day</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date range -->
+    <div class="card">
+      <div class="card-title">Date Range (IST)</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Start Date</label>
+          <div class="datetime-group">
+            <input type="date" name="start_date" required/>
+            <input type="time" name="start_time" value="09:15"/>
+          </div>
+        </div>
+        <div class="field">
+          <label>End Date</label>
+          <div class="datetime-group">
+            <input type="date" name="end_date" required/>
+            <input type="time" name="end_time" value="15:30"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-wrap">
+      <button type="submit" id="submitBtn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Fetch & Download Excel
+      </button>
+    </div>
+
+    <div id="status"></div>
+  </form>
+
+  <br/>
+  <div class="info-box">
+    <strong>How to get credentials:</strong><br/>
+    1. Login to AngelOne → My Profile → Enable API Access → Create App → copy <strong>API Key</strong><br/>
+    2. Open AngelOne mobile app → Profile → TOTP Setup → copy the <strong>Base32 secret key</strong><br/>
+    3. Find your <strong>Symbol Token</strong> from the ScripMaster JSON — search for your stock's <code>token</code> field<br/>
+    4. Market hours: <code>09:15 – 15:30 IST</code> (intraday data only available within this window)
+  </div>
+</main>
+
+<footer>AngelOne SmartAPI · OHLCV Candle Exporter</footer>
+
+<script>
+  const form   = document.getElementById('fetchForm');
+  const btn    = document.getElementById('submitBtn');
+  const status = document.getElementById('status');
+
+  function setStatus(type, icon, msg) {
+    status.className = type;
+    status.innerHTML = icon + `<span>${msg}</span>`;
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span> Connecting to AngelOne...`;
+    setStatus('loading', '<span class="spinner"></span>', 'Logging in and fetching candles — this may take a few seconds...');
+
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+
+    try {
+      const res = await fetch('/fetch', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        // Trigger file download
+        const blob = await res.blob();
+        const cd   = res.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename="?([^"]+)"?/);
+        const fname = match ? match[1] : 'candles.xlsx';
+
+        const url = URL.createObjectURL(blob);
+        const a   = document.createElement('a');
+        a.href = url; a.download = fname; a.click();
+        URL.revokeObjectURL(url);
+
+        setStatus('success',
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>',
+          `Download started! File: ${fname}`
+        );
+      } else {
+        const err = await res.json();
+        setStatus('error',
+          '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+          err.error || 'An error occurred.'
+        );
+      }
+    } catch (err) {
+      setStatus('error',
+        '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+        'Network error — is the server running?'
+      );
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Fetch & Download Excel`;
+    }
+  });
+</script>
+</body>
+</html>
